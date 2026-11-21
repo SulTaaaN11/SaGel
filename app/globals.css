@@ -1176,19 +1176,31 @@ select.input {
     display: block;
     width: 100%;
     max-width: 100%;
-    overflow-x: auto;
+    overflow-x: scroll;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-x pan-y;
     overscroll-behavior-x: contain;
-    border-collapse: separate;
-    border-spacing: 6px 2px;
+    padding-bottom: 10px;
+    scrollbar-width: auto;
+    scrollbar-color: var(--accent) var(--surface-raised);
   }
-  .week-table th,
-  .week-table td {
-    min-width: 6.8rem;
+  .week-table::-webkit-scrollbar {
+    height: 10px;
+    display: block;
   }
-  .week-table th:first-child,
-  .week-table td:first-child {
-    min-width: 4.6rem;
+  .week-table::-webkit-scrollbar-track {
+    background: var(--surface-raised);
+    border-radius: 999px;
+  }
+  .week-table::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 999px;
+  }
+  .week-table > thead,
+  .week-table > tbody {
+    display: table;
+    width: 58rem;
+    min-width: 58rem;
+    table-layout: fixed;
   }
 }
