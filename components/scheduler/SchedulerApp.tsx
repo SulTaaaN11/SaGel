@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -16,6 +16,28 @@ import ScheduleView from './ScheduleView';
 type Tab = 'book' | 'mine' | 'browse';
 type Load = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready' };
 
+function CalendarIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="22"
+      height="22"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
+      <path d="M3.5 10h17" />
+      <path d="M8 3v4M16 3v4" />
+      <path d="M8 14.5h.01M12 14.5h.01M16 14.5h.01" />
+    </svg>
+  );
+}
+
 export default function SchedulerApp() {
   const { push } = useToast();
 
@@ -28,7 +50,6 @@ export default function SchedulerApp() {
   const [editing, setEditing] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
-  // العميل يُنشأ بعد التحميل في المتصفح فقط
   useEffect(() => {
     try {
       setDb(getBrowserClient());
@@ -68,7 +89,6 @@ export default function SchedulerApp() {
     }
   }, [db, push]);
 
-  // تحديث لحظي لو غيّرت جدولك من تبويب أو جهاز تاني
   const profileId = profile?.id ?? null;
   useEffect(() => {
     if (!db || !profileId) return;
@@ -95,27 +115,27 @@ export default function SchedulerApp() {
     if (!profile || !catalog) return '';
     const group = catalog.groups.find((g) => g.id === profile.group_id)?.name ?? '';
     const section = catalog.sections.find((s) => s.id === profile.section_id)?.number;
-    return `مجموعة ${group}${section !== undefined ? ` · سكشن ${section}` : ''}`;
+    return `مجموعة ${group}${section !== undefined ? `  سكشن ${section}` : ''}`;
   }, [profile, catalog]);
 
   const header = (
     <header className="app-header no-print">
       <div className="flex items-center gap-3">
         <span className="brand-mark" aria-hidden="true">
-          ج
+          <CalendarIcon />
         </span>
-        <div>
+        <div className="min-w-0">
           <h1 className="text-lg font-bold leading-tight">جداول الفرقة الأولى</h1>
           <p className="muted text-sm">نظم المعلومات الإدارية</p>
         </div>
       </div>
       {profile && catalog ? (
-        <div className="flex items-center gap-3">
-          <div className="text-end text-sm">
-            <p className="font-medium">{profile.full_name}</p>
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="min-w-0 text-end text-sm">
+            <p className="font-medium [overflow-wrap:anywhere]">{profile.full_name}</p>
             <p className="muted">{studentLine}</p>
           </div>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>
+          <button type="button" className="btn btn-ghost btn-sm shrink-0" onClick={() => setEditing(true)}>
             تعديل بياناتي
           </button>
         </div>
@@ -151,37 +171,63 @@ export default function SchedulerApp() {
     body = (
       <>
         <div className="tabs no-print" role="tablist" aria-label="أقسام التطبيق">
-          <button type="button" role="tab" className="tab" aria-selected={tab === 'book'} onClick={() => setTab('book')}>
+          <button
+            type="button"
+            role="tab"
+            id="tab-book"
+            aria-controls="panel-view"
+            className="tab"
+            aria-selected={tab === 'book'}
+            onClick={() => setTab('book')}
+          >
             حجز مادة
           </button>
-          <button type="button" role="tab" className="tab" aria-selected={tab === 'mine'} onClick={() => setTab('mine')}>
+          <button
+            type="button"
+            role="tab"
+            id="tab-mine"
+            aria-controls="panel-view"
+            className="tab"
+            aria-selected={tab === 'mine'}
+            onClick={() => setTab('mine')}
+          >
             جدولي
             {schedule.length > 0 ? <span className="tab-count">{schedule.length}</span> : null}
           </button>
-          <button type="button" role="tab" className="tab" aria-selected={tab === 'browse'} onClick={() => setTab('browse')}>
+          <button
+            type="button"
+            role="tab"
+            id="tab-browse"
+            aria-controls="panel-view"
+            className="tab"
+            aria-selected={tab === 'browse'}
+            onClick={() => setTab('browse')}
+          >
             كل المواعيد
           </button>
         </div>
 
-        {tab === 'book' ? (
-          <BookingPanel
-            db={db}
-            catalog={catalog}
-            schedule={schedule}
-            onChanged={refreshSchedule}
-            onOpenSchedule={() => setTab('mine')}
-          />
-        ) : tab === 'mine' ? (
-          <ScheduleView
-            db={db}
-            schedule={schedule}
-            totalSubjects={catalog.subjects.length}
-            onChanged={refreshSchedule}
-            onGoBook={() => setTab('book')}
-          />
-        ) : (
-          <BrowsePanel db={db} catalog={catalog} />
-        )}
+        <div key={tab} id="panel-view" role="tabpanel" aria-labelledby={`tab-${tab}`} className="view-enter">
+          {tab === 'book' ? (
+            <BookingPanel
+              db={db}
+              catalog={catalog}
+              schedule={schedule}
+              onChanged={refreshSchedule}
+              onOpenSchedule={() => setTab('mine')}
+            />
+          ) : tab === 'mine' ? (
+            <ScheduleView
+              db={db}
+              schedule={schedule}
+              totalSubjects={catalog.subjects.length}
+              onChanged={refreshSchedule}
+              onGoBook={() => setTab('book')}
+            />
+          ) : (
+            <BrowsePanel db={db} catalog={catalog} />
+          )}
+        </div>
       </>
     );
   }
@@ -193,4 +239,3 @@ export default function SchedulerApp() {
     </main>
   );
 }
-

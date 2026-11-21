@@ -42,6 +42,31 @@ function tierTitle(tier: Tier, kind: SlotKind): string {
   return TIER_LABEL[tier];
 }
 
+function bookedSummary(lecture: boolean, section: boolean): string {
+  if (lecture && section) return 'مسجلة بالكامل';
+  if (lecture) return 'المحاضرة مسجلة';
+  if (section) return 'السكشن مسجل';
+  return 'لم تسجل بعد';
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M3.5 8.5l3 3 6-7" />
+    </svg>
+  );
+}
+
+const KINDS = ['lecture', 'section'] as const;
 const PREVIEW_COUNT = 4;
 
 export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenSchedule }: Props) {
@@ -68,7 +93,6 @@ export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenS
     : null;
   const enrolledId = enrolledRow?.enrollment_id ?? null;
 
-  // تحميل الاقتراحات عند تغيير المادة أو النوع أو أوقات الفراغ (مع تأخير بسيط)
   useEffect(() => {
     if (subjectId === null || enrolledId !== null) {
       setPlan(null);
@@ -97,14 +121,9 @@ export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenS
     };
   }, [db, subjectId, kind, freeList, enrolledId, reload]);
 
-  function pickSubject(id: number) {
+  function choose(id: number, nextKind: SlotKind) {
     setSubjectId(id);
-    setFailure(null);
-    setExpanded({});
-  }
-
-  function pickKind(next: SlotKind) {
-    setKind(next);
+    setKind(nextKind);
     setFailure(null);
     setExpanded({});
   }
@@ -119,7 +138,7 @@ export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenS
       push({
         tone: 'success',
         title: 'تم التسكين',
-        text: subject ? `${subject.name} · ${KIND_LABEL[kind]}` : undefined,
+        text: subject ? `${subject.name}  ${KIND_LABEL[kind]}` : undefined,
       });
       setFailure(null);
       await onChanged();
@@ -173,7 +192,6 @@ export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenS
 
   return (
     <div>
-      {/* 1) المادة والنوع */}
       <section className="panel" aria-labelledby="pick-title">
         <h2 id="pick-title" className="panel-title">
           1. اختار المادة
@@ -181,38 +199,53 @@ export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenS
         {catalog.subjects.length === 0 ? (
           <EmptyState title="مفيش مواد مضافة" hint="شغّل schema.sql ثم seed.sql في Supabase." />
         ) : (
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="course-grid">
             {catalog.subjects.map((s) => {
               const lecture = schedule.some((r) => r.subject_name === s.name && r.kind === 'lecture');
               const section = schedule.some((r) => r.subject_name === s.name && r.kind === 'section');
+              const selected = subjectId === s.id;
+              const isBooked = (k: (typeof KINDS)[number]) => (k === 'lecture' ? lecture : section);
               return (
-                <button
+                <div
                   key={s.id}
-                  type="button"
-                  className="choice"
-                  aria-pressed={subjectId === s.id}
-                  onClick={() => pickSubject(s.id)}
+                  className="course"
+                  data-selected={selected}
+                  data-booked={lecture || section}
                 >
-                  <span className="font-medium">{s.name}</span>
-                  <span className="muted text-xs">
-                    {lecture ? 'محاضرة ✓' : ''} {section ? 'سكشن ✓' : ''}
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    className="course-main"
+                    aria-pressed={selected}
+                    onClick={() => choose(s.id, kind)}
+                  >
+                    <span className="course-name">{s.name}</span>
+                    <span className="course-meta">{bookedSummary(lecture, section)}</span>
+                  </button>
+                  <div className="course-kinds" role="group" aria-label={`نوع الميعاد لمادة ${s.name}`}>
+                    {KINDS.map((k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        className="kind"
+                        aria-pressed={selected && kind === k}
+                        data-booked={isBooked(k)}
+                        onClick={() => choose(s.id, k)}
+                      >
+                        {KIND_LABEL[k]}
+                        {isBooked(k) ? (
+                          <>
+                            <CheckIcon />
+                            <span className="sr-only">{k === 'lecture' ? 'مسجلة' : 'مسجل'}</span>
+                          </>
+                        ) : null}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               );
             })}
           </div>
         )}
-
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <span className="text-sm font-medium">النوع:</span>
-          <div className="seg" role="group" aria-label="نوع الميعاد">
-            {(['lecture', 'section'] as const).map((k) => (
-              <button key={k} type="button" aria-pressed={kind === k} onClick={() => pickKind(k)}>
-                {KIND_LABEL[k]}
-              </button>
-            ))}
-          </div>
-        </div>
       </section>
 
       {subject === null ? (
@@ -226,7 +259,7 @@ export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenS
               {subject.name} ({KIND_LABEL[kind]}) مسجلة بالفعل في جدولك.
             </p>
             <p className="muted mt-1 text-sm">
-              {enrolledRow.staff_name} · {enrolledRow.room}
+              {enrolledRow.staff_name}  {enrolledRow.room}
             </p>
             <button type="button" className="btn btn-ghost btn-sm mt-3" onClick={onOpenSchedule}>
               افتح جدولي لتغييرها
@@ -235,7 +268,6 @@ export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenS
         </section>
       ) : (
         <>
-          {/* 2) أوقات الفراغ */}
           <section className="panel" aria-labelledby="free-title">
             <h2 id="free-title" className="panel-title">
               2. أوقات فراغك
@@ -243,7 +275,6 @@ export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenS
             <AvailabilityGrid value={free} busy={busy} onChange={changeFree} />
           </section>
 
-          {/* 3) التسكين */}
           <section className="panel" aria-labelledby="result-title">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <h2 id="result-title" className="panel-title !mb-0">
@@ -257,7 +288,7 @@ export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenS
                   onClick={doQuick}
                   disabled={pendingId !== null || loading || (plan !== null && plan.available.length === 0)}
                 >
-                  {pendingId === 'quick' ? 'جارٍ التسكين…' : 'تسكين سريع بأقرب وقت متاح'}
+                  {pendingId === 'quick' ? 'جارٍ التسكين' : 'تسكين سريع بأقرب وقت متاح'}
                 </button>
               </div>
             </div>
