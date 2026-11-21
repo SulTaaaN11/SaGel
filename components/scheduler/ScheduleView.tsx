@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useToast } from '@/components/ToastProvider';
 import { EmptyState, Modal } from '@/components/ui';
 import type { MyScheduleRow } from '@/lib/database.types';
@@ -16,6 +16,18 @@ type Props = {
   onGoBook: () => void;
 };
 
+type WeekCell = { type: 'item'; row: MyScheduleRow; span: 1 | 2 } | { type: 'skip' };
+
+/** فترتان متتاليتان (1-2، 3-4، 5-6، 7-8) تُدمجان لو كانتا نفس المادة والنوع والقاعة والمسؤول. */
+function sameUnit(a: MyScheduleRow, b: MyScheduleRow): boolean {
+  return (
+    a.subject_name === b.subject_name &&
+    a.kind === b.kind &&
+    a.room === b.room &&
+    a.staff_name === b.staff_name
+  );
+}
+
 export default function ScheduleView({ db, schedule, totalSubjects, onChanged, onGoBook }: Props) {
   const { push } = useToast();
   const [target, setTarget] = useState<MyScheduleRow | null>(null);
@@ -26,6 +38,28 @@ export default function ScheduleView({ db, schedule, totalSubjects, onChanged, o
     for (const row of schedule) map.set(cellKey({ day: row.day_no, period: row.period_no }), row);
     return map;
   }, [schedule]);
+
+  // دمج الفترتين المتتاليتين: الخلية الأولى تأخذ rowSpan=2 والثانية تُتخطى
+  const cells = useMemo(() => {
+    const map = new Map<string, WeekCell>();
+    for (const d of DAYS) {
+      for (const p of PERIODS) {
+        const key = cellKey({ day: d.index, period: p.id });
+        if (map.get(key)?.type === 'skip') continue;
+        const row = byCell.get(key);
+        if (!row) continue;
+        const nextKey = cellKey({ day: d.index, period: p.id + 1 });
+        const next = byCell.get(nextKey);
+        if (p.id % 2 === 1 && next && sameUnit(row, next)) {
+          map.set(key, { type: 'item', row, span: 2 });
+          map.set(nextKey, { type: 'skip' });
+        } else {
+          map.set(key, { type: 'item', row, span: 1 });
+        }
+      }
+    }
+    return map;
+  }, [byCell]);
 
   if (schedule.length === 0) {
     return (
@@ -48,7 +82,7 @@ export default function ScheduleView({ db, schedule, totalSubjects, onChanged, o
     setBusy(true);
     const result = await dropEnrollment(db, target.enrollment_id);
     if (result.ok) {
-      push({ tone: 'success', title: 'تم حذف المادة من جدولك', text: `${target.subject_name} · ${KIND_LABEL[target.kind]}` });
+      push({ tone: 'success', title: 'تم حذف المادة من جدولك', text: `${target.subject_name}  ${KIND_LABEL[target.kind]}` });
       await onChanged();
     } else {
       push({ tone: 'error', title: 'تعذّر الحذف', text: result.message });
@@ -58,6 +92,7 @@ export default function ScheduleView({ db, schedule, totalSubjects, onChanged, o
   }
 
   const totalSlots = totalSubjects * 2;
+  const lastPeriodId = PERIODS[PERIODS.length - 1]?.id;
 
   return (
     <div className="print-area">
@@ -74,7 +109,7 @@ export default function ScheduleView({ db, schedule, totalSubjects, onChanged, o
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="table-scroll" role="region" aria-label="الجدول الأسبوعي" tabIndex={0}>
           <table className="week-table">
             <thead>
               <tr>
@@ -90,27 +125,42 @@ export default function ScheduleView({ db, schedule, totalSubjects, onChanged, o
             </thead>
             <tbody>
               {PERIODS.map((p) => (
-                <tr key={p.id}>
-                  <th scope="row">
-                    <div>{p.id}</div>
-                    <div className="avail-time">{p.start}</div>
-                  </th>
-                  {DAYS.map((d) => {
-                    const row = byCell.get(cellKey({ day: d.index, period: p.id }));
-                    return (
-                      <td key={d.index} data-filled={row ? 'true' : 'false'}>
-                        {row ? (
-                          <div className="week-item">
-                            <span className="font-bold">{row.subject_name}</span>
-                            <small>
-                              {KIND_LABEL[row.kind]} · {row.room}
-                            </small>
-                          </div>
-                        ) : null}
-                      </td>
-                    );
-                  })}
-                </tr>
+                <Fragment key={p.id}>
+                  <tr>
+                    <th scope="row">
+                      <div>{p.id}</div>
+                      <div className="avail-time">{p.start}</div>
+                    </th>
+                    {DAYS.map((d) => {
+                      const cell = cells.get(cellKey({ day: d.index, period: p.id }));
+                      if (cell?.type === 'skip') return null;
+                      const item = cell?.type === 'item' ? cell : null;
+                      const span = item ? item.span : 1;
+                      return (
+                        <td
+                          key={d.index}
+                          data-filled={item ? 'true' : 'false'}
+                          data-span={span}
+                          rowSpan={span === 2 ? 2 : undefined}
+                        >
+                          {item ? (
+                            <div className="week-item">
+                              <span className="font-bold">{item.row.subject_name}</span>
+                              <small>
+                                {KIND_LABEL[item.row.kind]}  {item.row.room}
+                              </small>
+                            </div>
+                          ) : null}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  {p.id % 2 === 0 && p.id !== lastPeriodId ? (
+                    <tr className="week-gap" aria-hidden="true">
+                      <td colSpan={DAYS.length + 1} />
+                    </tr>
+                  ) : null}
+                </Fragment>
               ))}
             </tbody>
           </table>
@@ -131,11 +181,11 @@ export default function ScheduleView({ db, schedule, totalSubjects, onChanged, o
                   {row.subject_name} <span className="badge" data-status="already_enrolled">{KIND_LABEL[row.kind]}</span>
                 </p>
                 <p className="muted text-sm">
-                  {dayLabel(row.day_no)} · الفترة {row.period_no} ({periodRange(row.period_no)}) · {row.staff_name} · {row.room}
+                  {dayLabel(row.day_no)}  الفترة {row.period_no} ({periodRange(row.period_no)})  {row.staff_name}  {row.room}
                 </p>
                 <p className="muted text-sm">
                   مجموعة {row.group_name}
-                  {row.section_number !== null ? ` · سكشن ${row.section_number}` : ''}
+                  {row.section_number !== null ? `  سكشن ${row.section_number}` : ''}
                 </p>
               </div>
               <button type="button" className="btn btn-danger btn-sm no-print" onClick={() => setTarget(row)}>
@@ -157,7 +207,7 @@ export default function ScheduleView({ db, schedule, totalSubjects, onChanged, o
                 رجوع
               </button>
               <button type="button" className="btn btn-danger flex-1" onClick={confirmDrop} disabled={busy} data-autofocus>
-                {busy ? 'جارٍ الحذف…' : 'تأكيد الحذف'}
+                {busy ? 'جارٍ الحذف' : 'تأكيد الحذف'}
               </button>
             </div>
           </>

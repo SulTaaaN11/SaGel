@@ -1172,35 +1172,90 @@ select.input {
 }
 
 @media (max-width: 767px) {
-  .week-table {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: scroll;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x pan-y;
-    overscroll-behavior-x: contain;
-    padding-bottom: 10px;
-    scrollbar-width: auto;
-    scrollbar-color: var(--accent) var(--surface-raised);
+
+/* ---------- حاوية الجدول الأسبوعي ودمج الفترات ---------- */
+.table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+  overscroll-behavior-x: contain;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--surface-raised);
+}
+
+.table-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-scroll::-webkit-scrollbar-track {
+  background: var(--surface-raised);
+  border-radius: 999px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.table-scroll .week-table {
+  display: table;
+  width: 100%;
+  min-width: 44rem;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 5px 2px;
+}
+
+.week-table td[data-span='2'] {
+  vertical-align: middle;
+}
+
+.week-table tr.week-gap td {
+  height: 0.6rem;
+  min-height: 0.6rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+@media (max-width: 767px) {
+  .table-scroll .week-table {
+    min-width: 48rem;
   }
-  .week-table::-webkit-scrollbar {
-    height: 10px;
-    display: block;
+
+  .table-scroll .week-table th:first-child,
+  .table-scroll .week-table td:first-child {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background: var(--surface);
   }
-  .week-table::-webkit-scrollbar-track {
-    background: var(--surface-raised);
-    border-radius: 999px;
+
+  .table-scroll .week-table thead th:first-child {
+    background: var(--surface-elevated);
   }
-  .week-table::-webkit-scrollbar-thumb {
-    background: var(--accent);
-    border-radius: 999px;
+
+  .table-scroll .week-table tr.week-gap th:first-child,
+  .table-scroll .week-table tr.week-gap td:first-child {
+    background: transparent;
+    position: static;
   }
-  .week-table > thead,
-  .week-table > tbody {
-    display: table;
-    width: 58rem;
-    min-width: 58rem;
-    table-layout: fixed;
+}
+
+@media print {
+  .table-scroll {
+    overflow: visible !important;
+    padding-bottom: 0 !important;
+  }
+  .table-scroll .week-table {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .table-scroll .week-table th:first-child,
+  .table-scroll .week-table td:first-child {
+    position: static !important;
   }
 }
