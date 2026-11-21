@@ -1169,3 +1169,30 @@ select.input {
 .avail-table tbody tr:nth-child(even) {
   padding-bottom: 8px;
 }
+@media (max-width: 767px) {
+  .week-table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+    overscroll-behavior-x: contain;
+  }
+  .week-table thead,
+  .week-table tbody {
+    display: table;
+    width: 46rem;
+    min-width: 46rem;
+    table-layout: fixed;
+  }
+  .week-table th,
+  .week-table td {
+    min-width: 6.2rem;
+  }
+  .week-table th:first-child,
+  .week-table td:first-child {
+    min-width: 4.5rem;
+    width: 4.5rem;
+  }
+}
