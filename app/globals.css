@@ -1174,17 +1174,21 @@ select.input {
 @media (max-width: 767px) {
   .week-table {
     display: block;
+    width: 100%;
     max-width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-x pan-y;
     overscroll-behavior-x: contain;
+    border-collapse: separate;
+    border-spacing: 6px 2px;
   }
-  .week-table thead,
-  .week-table tbody {
-    display: table;
-    width: 54rem;
-    min-width: 54rem;
-    table-layout: fixed;
+  .week-table th,
+  .week-table td {
+    min-width: 6.8rem;
+  }
+  .week-table th:first-child,
+  .week-table td:first-child {
+    min-width: 4.6rem;
   }
 }
