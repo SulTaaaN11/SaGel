@@ -257,8 +257,8 @@ export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenS
                 <path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01" />
               </svg>
             </div>
-            <p className="font-bold">1605158715781593158332157815921576159132158015831608160416031567</p>
-            <p className="muted text-sm">15751582157815751585321605157515831577321605160632160116081602321608160716061585158816171581321604160332157115811587160632157516041605160815751593161015833215751604160515781575158115773216041610160346</p>
+            <p className="font-bold">مسعدف تظبط جدولك؟</p>
+            <p className="muted text-sm">اختار مادة من فوق وهنرشّح لك أحسن المواعيد المتاحة ليك.</p>
           </div>
           <style jsx>{`
             .sul-float-card {
