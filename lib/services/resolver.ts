@@ -45,8 +45,8 @@ const emptyCounts = (): Record<SlotStatus, number> => ({
 });
 
 /**
- * rows: نتيجة suggest_slots مع أوقات الفراغ المحددة.
- * anyTimeRows: نفس النتيجة بدون قيد فراغ (لاقتراح بدائل خارج الفراغ) أو null.
+- rows: نتيجة suggest_slots مع أوقات الفراغ المحددة.
+- anyTimeRows: نفس النتيجة بدون قيد فراغ (لاقتراح بدائل خارج الفراغ) أو null.
  */
 export function buildPlan(rows: SuggestedSlot[], anyTimeRows: SuggestedSlot[] | null): EnrollmentPlan {
   const sorted = [...rows].sort(compareSlots);
@@ -214,11 +214,23 @@ export function buildResolution(plan: EnrollmentPlan): Resolution {
   };
 }
 
-/** الفترات المشغولة في جدول الطالب: مفتاح "يوم-فترة" ← اسم المادة (لعرض مؤشر التعارض في شبكة الفراغ). */
+function pairedPeriod(period: number): number | null {
+  if (period < 1 || period > 8) return null;
+  return period % 2 === 1 ? period + 1 : period - 1;
+}
+
+/** الفترات المشغولة في جدول الطالب: مفتاح "يوم-فترة"  اسم المادة (بما فيها الفترة المقترنة 1-2، 3-4، 5-6، 7-8). */
 export function buildBusyMap(schedule: MyScheduleRow[]): Map<string, string> {
   const map = new Map<string, string>();
   for (const row of schedule) {
     map.set(cellKey({ day: row.day_no, period: row.period_no }), row.subject_name);
+    const partner = pairedPeriod(row.period_no);
+    if (partner !== null) {
+      const partnerKey = cellKey({ day: row.day_no, period: partner });
+      if (!map.has(partnerKey)) {
+        map.set(partnerKey, row.subject_name);
+      }
+    }
   }
   return map;
 }
