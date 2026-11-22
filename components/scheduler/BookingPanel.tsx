@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/components/ToastProvider';
@@ -250,7 +250,39 @@ export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenS
 
       {subject === null ? (
         <section className="panel">
-          <EmptyState title="ابدأ باختيار مادة" hint="هنقترح لك أنسب المواعيد حسب مجموعتك وسكشنك وأوقات فراغك." />
+          <div className="empty-state sul-float-card">
+            <div className="empty-mark sul-float-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="3" />
+                <path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01" />
+              </svg>
+            </div>
+            <p className="font-bold">1605158715781593158332157815921576159132158015831608160416031567</p>
+            <p className="muted text-sm">15751582157815751585321605157515831577321605160632160116081602321608160716061585158816171581321604160332157115811587160632157516041605160815751593161015833215751604160515781575158115773216041610160346</p>
+          </div>
+          <style jsx>{`
+            .sul-float-card {
+              animation: sulFloatPanel 4.2s ease-in-out infinite;
+              will-change: transform;
+            }
+            .sul-float-icon {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              animation: sulFloatIcon 3.2s ease-in-out infinite;
+            }
+            @keyframes sulFloatPanel {
+              0%, 100% { transform: translateY(0px); }
+              50% { transform: translateY(-5px); }
+            }
+            @keyframes sulFloatIcon {
+              0%, 100% { transform: translateY(0px); }
+              50% { transform: translateY(-3px); }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .sul-float-card, .sul-float-icon { animation: none; }
+            }
+          `}</style>
         </section>
       ) : enrolledRow ? (
         <section className="panel" aria-live="polite">
