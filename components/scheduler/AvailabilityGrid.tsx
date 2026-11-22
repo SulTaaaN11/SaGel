@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { DAYS, PERIODS, cellKey } from '@/lib/schedule';
 import type { FreeTime } from '@/lib/schedule';
 
@@ -17,7 +18,25 @@ function pairedPeriod(period: number): number | null {
 }
 
 export default function AvailabilityGrid({ value, busy, onChange }: Props) {
-  const isBusy = (day: number, period: number) => busy.has(cellKey({ day, period }));
+  // اعتبار الفترة وأختها في نفس المحاضرة مشغولتين لو إحداهما مشغولة
+  const effectiveBusy = useMemo(() => {
+    const map = new Map<string, string>(busy);
+    for (const [key, name] of busy.entries()) {
+      const [dayStr, periodStr] = key.split('-');
+      const day = Number(dayStr);
+      const period = Number(periodStr);
+      const partner = pairedPeriod(period);
+      if (partner !== null) {
+        const partnerKey = cellKey({ day, period: partner });
+        if (!map.has(partnerKey)) {
+          map.set(partnerKey, name);
+        }
+      }
+    }
+    return map;
+  }, [busy]);
+
+  const isBusy = (day: number, period: number) => effectiveBusy.has(cellKey({ day, period }));
 
   function toggleCell(day: number, period: number) {
     const partner = pairedPeriod(period);
@@ -118,7 +137,7 @@ export default function AvailabilityGrid({ value, busy, onChange }: Props) {
                 </th>
                 {DAYS.map((d) => {
                   const key = cellKey({ day: d.index, period: p.id });
-                  const busyName = busy.get(key);
+                  const busyName = effectiveBusy.get(key);
                   const state = busyName ? 'busy' : value.has(key) ? 'free' : 'idle';
                   return (
                     <td key={d.index}>
@@ -132,7 +151,7 @@ export default function AvailabilityGrid({ value, busy, onChange }: Props) {
                         aria-label={`${d.label} الفترة ${p.id}${busyName ? ` (مشغولة: ${busyName})` : ''}`}
                         onClick={() => toggleCell(d.index, p.id)}
                       >
-                        {state === 'busy' ? 'مشغول' : state === 'free' ? '' : ''}
+                        {state === 'busy' ? 'مشغول' : state === 'free' ? '\u2713' : ''}
                       </button>
                     </td>
                   );

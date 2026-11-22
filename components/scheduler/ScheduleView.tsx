@@ -18,7 +18,7 @@ type Props = {
 
 type WeekCell = { type: 'item'; row: MyScheduleRow; span: 1 | 2 } | { type: 'skip' };
 
-/** فترتان متتاليتان (1-2، 3-4، 5-6، 7-8) تُدمجان لو كانتا نفس المادة والنوع والقاعة والمسؤول. */
+/** فترتان متتاليتان (1-2، 3-4، 5-6، 7-8) تعتبر محاضرة واحدة متصلة. */
 function sameUnit(a: MyScheduleRow, b: MyScheduleRow): boolean {
   return (
     a.subject_name === b.subject_name &&
@@ -48,9 +48,16 @@ export default function ScheduleView({ db, schedule, totalSubjects, onChanged, o
         if (map.get(key)?.type === 'skip') continue;
         const row = byCell.get(key);
         if (!row) continue;
+
+        const isOddStart = p.id % 2 === 1;
         const nextKey = cellKey({ day: d.index, period: p.id + 1 });
         const next = byCell.get(nextKey);
-        if (p.id % 2 === 1 && next && sameUnit(row, next)) {
+
+        if (isOddStart && next && sameUnit(row, next)) {
+          map.set(key, { type: 'item', row, span: 2 });
+          map.set(nextKey, { type: 'skip' });
+        } else if (isOddStart && !next) {
+          // لو المحاضرة مسجلة في الفترة الفردية فقط والفترة التالية خالية، تمتد كوحدة واحدة (فترتين)
           map.set(key, { type: 'item', row, span: 2 });
           map.set(nextKey, { type: 'skip' });
         } else {
