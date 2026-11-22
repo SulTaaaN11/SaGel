@@ -257,7 +257,7 @@ export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenS
                 <path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01" />
               </svg>
             </div>
-            <p className="font-bold">مسعدف تظبط جدولك؟</p>
+            <p className="font-bold">مستعد تظبط جدولك؟</p>
             <p className="muted text-sm">اختار مادة من فوق وهنرشّح لك أحسن المواعيد المتاحة ليك.</p>
           </div>
           <style jsx>{`
@@ -287,9 +287,7 @@ export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenS
       ) : enrolledRow ? (
         <section className="panel" aria-live="polite">
           <div className="problem" data-kind="ok">
-            <p className="font-bold">
-              {subject.name} ({KIND_LABEL[kind]}) مسجلة بالفعل في جدولك.
-            </p>
+            <p className="font-bold">مستعد تظبط جدولك؟</p>
             <p className="muted mt-1 text-sm">
               {enrolledRow.staff_name}  {enrolledRow.room}
             </p>
@@ -406,3 +404,4 @@ export default function BookingPanel({ db, catalog, schedule, onChanged, onOpenS
     </div>
   );
 }
+
