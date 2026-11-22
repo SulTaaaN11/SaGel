@@ -5,20 +5,33 @@ import type { FreeTime } from '@/lib/schedule';
 
 type Props = {
   value: Set<string>;
-  /** الفترات المشغولة بمواد مسجلة: مفتاح "يوم-فترة" ← اسم المادة */
+  /** الفترات المشغولة بمواد مسجلة: مفتاح "يوم-فترة"  اسم المادة */
   busy: Map<string, string>;
   onChange: (next: Set<string>) => void;
 };
+
+/** إرجاع الفترة المقترنة ضمن نفس المحاضرة (1-2، 3-4، 5-6، 7-8). */
+function pairedPeriod(period: number): number | null {
+  if (period < 1 || period > 8) return null;
+  return period % 2 === 1 ? period + 1 : period - 1;
+}
 
 export default function AvailabilityGrid({ value, busy, onChange }: Props) {
   const isBusy = (day: number, period: number) => busy.has(cellKey({ day, period }));
 
   function toggleCell(day: number, period: number) {
-    if (isBusy(day, period)) return;
-    const key = cellKey({ day, period });
+    const partner = pairedPeriod(period);
+    const candidates = [period, ...(partner !== null ? [partner] : [])];
+    const usable = candidates.filter((p) => !isBusy(day, p));
+    if (usable.length === 0) return;
+
+    const allSelected = usable.every((p) => value.has(cellKey({ day, period: p })));
     const next = new Set(value);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
+    for (const p of usable) {
+      const k = cellKey({ day, period: p });
+      if (allSelected) next.delete(k);
+      else next.add(k);
+    }
     onChange(next);
   }
 
@@ -119,7 +132,7 @@ export default function AvailabilityGrid({ value, busy, onChange }: Props) {
                         aria-label={`${d.label} الفترة ${p.id}${busyName ? ` (مشغولة: ${busyName})` : ''}`}
                         onClick={() => toggleCell(d.index, p.id)}
                       >
-                        {state === 'busy' ? 'مشغول' : state === 'free' ? '✓' : ''}
+                        {state === 'busy' ? 'مشغول' : state === 'free' ? '' : ''}
                       </button>
                     </td>
                   );
@@ -130,7 +143,7 @@ export default function AvailabilityGrid({ value, busy, onChange }: Props) {
         </table>
       </div>
       <p className="field-hint mt-2">
-        اضغط على اسم اليوم أو رقم الفترة لتحديد صف أو عمود كامل. لو ما حددتش أي فترة هنعتبر كل الأوقات مناسبة.
+        اختيار أي فترة يحدّد الفترتين المتتاليتين معاً (1-2، 3-4، 5-6، 7-8)، ويمكنك أيضاً الضغط على اسم اليوم أو رقم الفترة.
       </p>
     </div>
   );
