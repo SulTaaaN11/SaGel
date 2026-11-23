@@ -406,9 +406,9 @@ select.input {
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.5rem;
-  max-width: 42rem;
+  max-width: 48rem;
   margin-bottom: 1.25rem;
   padding: 0.4rem;
   background: var(--surface);
@@ -1259,3 +1259,64 @@ select.input {
     position: static !important;
   }
 }
+@keyframes sa-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.sa-float {
+  animation: sa-float 4.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sa-float {
+    animation: none;
+  }
+}
+
+@keyframes sa-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+.sa-float {
+  animation: sa-float 4.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes sa-sochial-glow {
+  0%, 100% {
+    box-shadow: 0 0 14px rgba(53, 224, 194, 0.16), 0 0 6px rgba(124, 92, 255, 0.12);
+    text-shadow: 0 0 10px rgba(53, 224, 194, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(53, 224, 194, 0.36), 0 0 12px rgba(124, 92, 255, 0.24);
+    text-shadow: 0 0 16px rgba(53, 224, 194, 0.55);
+  }
+}
+
+.sa-sochial-glow {
+  animation: sa-sochial-glow 3.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sa-float,
+  .sa-sochial-glow {
+    animation: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .tabs {
+    gap: .3rem;
+    padding: .3rem;
+  }
+  .tab {
+    padding: 0 .45rem;
+    font-size: .82rem;
+    gap: .3rem;
+  }
+}
+
+a.tab { text-decoration: none; }

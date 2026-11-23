@@ -1,5 +1,5 @@
 'use client';
-
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useToast } from '@/components/ToastProvider';
@@ -205,6 +205,9 @@ export default function SchedulerApp() {
           >
             كل المواعيد
           </button>
+          <Link href="/share" className="tab">
+            شارك
+          </Link>
         </div>
 
         <div key={tab} id="panel-view" role="tabpanel" aria-labelledby={`tab-${tab}`} className="view-enter">
